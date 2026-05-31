@@ -4,7 +4,7 @@ This folder contains exported n8n workflows (`.json`) plus screenshots of the wo
 
 ## Folder Layout
 
-- `workflows/` — exported workflow JSON files (export from n8n)
+- `workflows/` — exported workflow JSON files (import these into n8n)
 - `screenshots/` — workflow canvas screenshots (optional but recommended)
 
 ## How To Export (n8n → JSON)
@@ -52,8 +52,59 @@ When you add a new workflow, include these details in the project README or in a
 - Output (what it creates/returns):
 - Error handling / retries:
 
-## Planned Workflows (Add Later)
+## Included Workflows
 
-- `webhook-api-router.json` — REST/webhook router + OpenAI decision routing
-- `gmail-openai-agent.json` — Gmail trigger + OpenAI + downstream actions
+### 1) webhook-api-router.json
 
+**Goal:** Single webhook endpoint that routes requests based on `action` and returns a JSON response.
+
+**Trigger:** Webhook (POST)  
+**Path:** `api-router`  
+**Response Mode:** When Last Node Finishes (returns the last node output)
+
+**Request examples**
+
+- Ping:
+
+```json
+{ "action": "ping" }
+```
+
+- Echo:
+
+```json
+{ "action": "echo", "hello": "world" }
+```
+
+- Summarize (uses OpenAI):
+
+```json
+{ "action": "summarize", "text": "Paste any text here..." }
+```
+
+**Environment variables**
+
+- `OPENAI_API_KEY` (required only for `action=summarize`)
+
+**Notes**
+
+- If `action` is not recognized, workflow returns an error JSON.
+
+### 2) gmail-automation.json
+
+**Goal:** Small demo flow that sends a test email on a schedule.
+
+**Trigger:** Cron (Every day 09:00)  
+**Action:** Gmail → Send message
+
+**Setup**
+
+1. Import the workflow JSON
+2. Create Gmail credentials in n8n and select them in the Gmail node
+3. Open the “Compose Email” node and replace `YOUR_EMAIL@example.com`
+4. Activate the workflow
+
+## Next Workflows (Add Later)
+
+- Add workflow screenshots into `screenshots/`
+- Add more routes to the webhook router (for example: `create_ticket`, `send_slack`, `rag_query`)

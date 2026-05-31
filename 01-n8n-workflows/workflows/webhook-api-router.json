@@ -1,0 +1,241 @@
+{
+  "name": "Webhook API Router",
+  "nodes": [
+    {
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [260, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "api-router",
+        "responseMode": "lastNode"
+      }
+    },
+    {
+      "name": "Route By Action",
+      "type": "n8n-nodes-base.switch",
+      "position": [520, 300],
+      "parameters": {
+        "mode": "rules",
+        "rules": [
+          {
+            "output": "ping",
+            "conditions": {
+              "value1": "={{ $json.body.action }}",
+              "operation": "equals",
+              "value2": "ping"
+            }
+          },
+          {
+            "output": "echo",
+            "conditions": {
+              "value1": "={{ $json.body.action }}",
+              "operation": "equals",
+              "value2": "echo"
+            }
+          },
+          {
+            "output": "summarize",
+            "conditions": {
+              "value1": "={{ $json.body.action }}",
+              "operation": "equals",
+              "value2": "summarize"
+            }
+          }
+        ],
+        "fallbackOutput": "extra"
+      }
+    },
+    {
+      "name": "Ping Response",
+      "type": "n8n-nodes-base.set",
+      "position": [780, 160],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "ok"
+            },
+            {
+              "name": "message",
+              "value": "pong"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Echo Response",
+      "type": "n8n-nodes-base.set",
+      "position": [780, 300],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "ok"
+            }
+          ],
+          "object": [
+            {
+              "name": "received",
+              "value": "={{ $json.body }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Build Summarize Input",
+      "type": "n8n-nodes-base.set",
+      "position": [780, 460],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "text",
+              "value": "={{ $json.body.text || '' }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "OpenAI Summarize (HTTP)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1040, 460],
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "headerParametersJson": "={\"Authorization\":\"Bearer {{$env.OPENAI_API_KEY}}\",\"Content-Type\":\"application/json\"}",
+        "bodyParametersJson": "={\"model\":\"gpt-4o-mini\",\"temperature\":0.2,\"messages\":[{\"role\":\"system\",\"content\":\"Summarize text. Return plain text only.\"},{\"role\":\"user\",\"content\":\"Summarize this in 3 bullet points:\\n\\n\" + $json.text}]}"
+      }
+    },
+    {
+      "name": "Summarize Response",
+      "type": "n8n-nodes-base.set",
+      "position": [1300, 460],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "ok"
+            },
+            {
+              "name": "action",
+              "value": "summarize"
+            },
+            {
+              "name": "summary",
+              "value": "={{ $json.choices?.[0]?.message?.content || '' }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Unknown Action",
+      "type": "n8n-nodes-base.set",
+      "position": [780, 620],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "error"
+            },
+            {
+              "name": "message",
+              "value": "Unknown action. Use: ping | echo | summarize"
+            }
+          ],
+          "object": [
+            {
+              "name": "received",
+              "value": "={{ $json.body }}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Route By Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Action": {
+      "main": [
+        [
+          {
+            "node": "Ping Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Echo Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Summarize Input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unknown Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Summarize Input": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Summarize (HTTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Summarize (HTTP)": {
+      "main": [
+        [
+          {
+            "node": "Summarize Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": []
+}

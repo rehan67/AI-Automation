@@ -1,0 +1,84 @@
+{
+  "name": "Gmail Automation (Small Flow)",
+  "nodes": [
+    {
+      "name": "Every Day 09:00",
+      "type": "n8n-nodes-base.cron",
+      "position": [260, 300],
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyDay",
+              "hour": 9,
+              "minute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Compose Email",
+      "type": "n8n-nodes-base.set",
+      "position": [520, 300],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "to",
+              "value": "YOUR_EMAIL@example.com"
+            },
+            {
+              "name": "subject",
+              "value": "n8n Gmail Automation Test"
+            },
+            {
+              "name": "message",
+              "value": "This is an automated email sent by n8n. Update the workflow to your real use case."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Send Email (Gmail)",
+      "type": "n8n-nodes-base.gmail",
+      "position": [780, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "to": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.message }}"
+      }
+    }
+  ],
+  "connections": {
+    "Every Day 09:00": {
+      "main": [
+        [
+          {
+            "node": "Compose Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": []
+}
